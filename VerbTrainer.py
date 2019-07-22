@@ -4,11 +4,14 @@ import random
 import VerbConjugator as VC
 import time
 import window as GW
+import Typer
+import EventHandler as EH
 from threading import Thread
 
 class VerbTrainer:
     verbList = []
     verbIndex = -1
+    m_finished = False
 
     def __init__(self):
         verbList = self.Setup()
@@ -35,6 +38,7 @@ class VerbTrainer:
                 print(f"The te-form: {VC.TeForm(verb)}")
             else:
                 print(f"Oops, that wasn't right. {verb['japanese']} ({verb['furigana']}) is {verb['english']}")
+        self.m_finished = True
 
     def next_word(self):
         print("Beginning verb trainer...")
@@ -46,15 +50,23 @@ class VerbTrainer:
 
 if __name__ == "__main__":
     VT = VerbTrainer()
+    clock = GW.get_clock()
     with GW.game_window(500,500) as window:
         a = Thread(target = VT.train)
         a.start()
-        while (not window.was_closed()) and a.is_alive():
+        ty = Typer.Typer()
+        EventHandler = EH.EventHandler()
+        EventHandler.add_to_listen(window.was_closed)
+        EventHandler.add_to_listen(ty.get_keystrokes)
+        while (not window.closed) and (not VT.m_finished):
+            EventHandler.check_events()
             path = os.path.join("VerbPictures", f"{VT.verbList[VT.verbIndex]['english']}")
             image = GW.load_image(path.replace(' ','_'))
             image = GW.scale_screen(image)
             window.screen.blit(image, (0,0))
             GW.write_on_screen(window.screen, VT.verbList[VT.verbIndex]['furigana'], (0,0))
             GW.write_on_screen(window.screen, VT.verbList[VT.verbIndex]['japanese'], (0,50))
+            GW.write_on_screen(window.screen, ty.m_text, (0, 100))
             window.flip()
+            clock.tick(30)
         exit()

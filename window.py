@@ -16,18 +16,24 @@ def write_on_screen(screen, word, position):
 
 def play_sound(soundfile : str):
     pygame.mixer.music.load(soundfile)
-    pygame.mixer.music.play()
+    pygame.mixer.music.play()  
+
+def get_all_events():
+    #pygame.event.wait()
+    return pygame.event.get()
+
+def get_clock():
+    return pygame.time.Clock()
 
 #A class to manage the window of the game
 class game_window:
     screen = None
     logo = None
+    closed : bool = False
 
-    def was_closed(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return True
-        return False
+    def was_closed(self, event):
+        if event.type == pygame.QUIT:
+            self.closed = True
 
     def __init__(self, w, h):
         pygame.init()

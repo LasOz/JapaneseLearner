@@ -84,8 +84,7 @@ def game_loop():
             graphics.write_on_screen(window.screen,
                                      verb_trainer.verb_list[verb_trainer.verb_index]['japanese'],
                                      (0, 50))
-            typer.m_text = romkan.to_hiragana(typer.m_text)
-            graphics.write_on_screen(window.screen, typer.m_text, (0, 100))
+            graphics.write_on_screen(window.screen, romkan.to_hiragana(typer.m_text), (0, 100))
             window.flip()
             clock.tick(30)
         exit()

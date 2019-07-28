@@ -1,72 +1,94 @@
+"""The verb trainer class and game loop"""
+
 import csv
-import os
 import random
+import os
+from threading import Thread
+import romkan
 import VerbConjugator as VC
-import time
-import window as GW
+import window as graphics
 import Typer
 import EventHandler as EH
-from threading import Thread
 
 class VerbTrainer:
-    verbList = []
-    verbIndex = -1
+    """The class for handling the verb trainer game logic"""
+    verb_list = []
+    verb_index = -1
     m_finished = False
 
     def __init__(self):
-        verbList = self.Setup()
-        random.shuffle(verbList)
+        self.verb_list = self.setup()
+        random.shuffle(self.verb_list)
 
-    def Setup(self):
+    def setup(self):
+        """Setup the game by reading the csv file"""
         print("Beginning verb trainer...")
-        with open('verblist.csv', mode='r', encoding="utf8") as verbFile:
-            verbReader = csv.DictReader(verbFile)
-            for row in verbReader:
-                self.verbList.append(row)
-        return self.verbList
+        with open('verblist.csv', mode='r', encoding="utf8") as verb_file:
+            verb_reader = csv.DictReader(verb_file)
+            for row in verb_reader:
+                self.verb_list.append(row)
+        return self.verb_list
 
     def train(self):
-        for self.verbIndex, verb in enumerate(self.verbList):
-            GW.play_sound(os.path.join("VerbClips", f"{verb['english'].replace(' ','_')}.mp3"))
+        """The training loop"""
+        for self.verb_index, verb in enumerate(self.verb_list):
+            graphics.play_sound(os.path.join("VerbClips",
+                                             f"{verb['english'].replace(' ','_')}.mp3"))
             answer = input(f"What is {verb['japanese']} ({verb['furigana']}) the verb for?\n")
-            if (verb['english'].count(answer) > 0):
-                print(f"Correct. {verb['japanese']} is a {verb['verb-type']}-verb for '{verb['english']}'")
+            if verb['english'].count(answer) > 0:
+                print(f"Correct. {verb['japanese']} is a "+
+                      f"{verb['verb-type']}-verb for '{verb['english']}'")
                 print(f"The Polite Present Indicative tense: {VC.Conjugate(verb, 'present', True)}")
                 print(f"The Plain Present Indicative tense: {VC.Conjugate(verb, 'present', False)}")
                 print(f"The Polite Past Indicative tense: {VC.Conjugate(verb, 'past', True)}")
                 print(f"The Plain Past Indicative tense: {VC.Conjugate(verb, 'past', False)}")
                 print(f"The te-form: {VC.TeForm(verb)}")
             else:
-                print(f"Oops, that wasn't right. {verb['japanese']} ({verb['furigana']}) is {verb['english']}")
+                print("Oops, that wasn't right. " +
+                      f"{verb['japanese']} ({verb['furigana']}) is {verb['english']}")
         self.m_finished = True
 
     def next_word(self):
+        """Advance the game to the next word"""
         print("Beginning verb trainer...")
-        if (self.verbIndex < len(self.verbList)):
-            self.verbIndex += 1
+        if self.verb_index < len(self.verb_list):
+            self.verb_index += 1
             return True
-        else:
-            return False
+        return False
 
-if __name__ == "__main__":
-    VT = VerbTrainer()
-    clock = GW.get_clock()
-    with GW.game_window(500,500) as window:
-        a = Thread(target = VT.train)
-        a.start()
-        ty = Typer.Typer()
-        EventHandler = EH.EventHandler()
-        EventHandler.add_to_listen(window.was_closed)
-        EventHandler.add_to_listen(ty.get_keystrokes)
-        while (not window.closed) and (not VT.m_finished):
-            EventHandler.check_events()
-            path = os.path.join("VerbPictures", f"{VT.verbList[VT.verbIndex]['english']}")
-            image = GW.load_image(path.replace(' ','_'))
-            image = GW.scale_screen(image)
-            window.screen.blit(image, (0,0))
-            GW.write_on_screen(window.screen, VT.verbList[VT.verbIndex]['furigana'], (0,0))
-            GW.write_on_screen(window.screen, VT.verbList[VT.verbIndex]['japanese'], (0,50))
-            GW.write_on_screen(window.screen, ty.m_text, (0, 100))
+    def current_picture(self):
+        """Get the current image of the game sequence"""
+        if self.verb_list:
+            file_name = f"{self.verb_list[self.verb_index]['english']}.jpg"
+            return os.path.join("VerbPictures", file_name).replace(' ', '_')
+        return os.path.join("VerbPictures", "Loading.jpg")
+
+def game_loop():
+    """It's just the game loop"""
+    verb_trainer = VerbTrainer()
+    clock = graphics.get_clock()
+    with graphics.GameWindow(500, 500) as window:
+        verb_trainer_thread = Thread(target=verb_trainer.train)
+        verb_trainer_thread.start()
+        typer = Typer.Typer()
+        event_handler = EH.EventHandler()
+        event_handler.add_to_listen(window.was_closed)
+        event_handler.add_to_listen(typer.get_keystrokes)
+        while (not window.closed) and (not verb_trainer.m_finished):
+            event_handler.check_events()
+            image = graphics.load_image(verb_trainer.current_picture())
+            window.blit_to_scale(image, (0, 0))
+            graphics.write_on_screen(window.screen,
+                                     verb_trainer.verb_list[verb_trainer.verb_index]['furigana'],
+                                     (0, 0))
+            graphics.write_on_screen(window.screen,
+                                     verb_trainer.verb_list[verb_trainer.verb_index]['japanese'],
+                                     (0, 50))
+            typer.m_text = romkan.to_hiragana(typer.m_text)
+            graphics.write_on_screen(window.screen, typer.m_text, (0, 100))
             window.flip()
             clock.tick(30)
         exit()
+
+if __name__ == "__main__":
+    game_loop()

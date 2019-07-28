@@ -5,10 +5,10 @@ import random
 import os
 from threading import Thread
 import romkan
-import VerbConjugator as VC
+import verb_conjugator as VC
 import window as graphics
-import Typer
-import EventHandler as EH
+import typer as keyboard
+import event_handler as EH
 
 class VerbTrainer:
     """The class for handling the verb trainer game logic"""
@@ -38,11 +38,11 @@ class VerbTrainer:
             if verb['english'].count(answer) > 0:
                 print(f"Correct. {verb['japanese']} is a "+
                       f"{verb['verb-type']}-verb for '{verb['english']}'")
-                print(f"The Polite Present Indicative tense: {VC.Conjugate(verb, 'present', True)}")
-                print(f"The Plain Present Indicative tense: {VC.Conjugate(verb, 'present', False)}")
-                print(f"The Polite Past Indicative tense: {VC.Conjugate(verb, 'past', True)}")
-                print(f"The Plain Past Indicative tense: {VC.Conjugate(verb, 'past', False)}")
-                print(f"The te-form: {VC.TeForm(verb)}")
+                print(f"The Polite Present Indicative tense: {VC.conjugate(verb, 'present', True)}")
+                print(f"The Plain Present Indicative tense: {VC.conjugate(verb, 'present', False)}")
+                print(f"The Polite Past Indicative tense: {VC.conjugate(verb, 'past', True)}")
+                print(f"The Plain Past Indicative tense: {VC.conjugate(verb, 'past', False)}")
+                print(f"The te-form: {VC.te_form(verb)}")
             else:
                 print("Oops, that wasn't right. " +
                       f"{verb['japanese']} ({verb['furigana']}) is {verb['english']}")
@@ -70,7 +70,7 @@ def game_loop():
     with graphics.GameWindow(500, 500) as window:
         verb_trainer_thread = Thread(target=verb_trainer.train)
         verb_trainer_thread.start()
-        typer = Typer.Typer()
+        typer = keyboard.Typer()
         event_handler = EH.EventHandler()
         event_handler.add_to_listen(window.was_closed)
         event_handler.add_to_listen(typer.get_keystrokes)
